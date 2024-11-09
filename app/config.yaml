@@ -1,0 +1,5 @@
+model:
+  model_path: "mlruns\175873153352773210\c40867a27a574817ab6d98e0d06c6be2\artifacts\model\model.pkl"
+
+security:
+  api_key: "mysecretkey"
