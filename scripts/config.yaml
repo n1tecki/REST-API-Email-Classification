@@ -1,0 +1,18 @@
+model:
+  max_iter: 10000
+  penalty: 'l2'
+  random_state: 42
+  C: 0.5
+  solver: 'liblinear'
+
+vectorizer:
+  stop_words: 'english'
+  max_features: 1000
+  ngram_range: [1, 2]
+
+mlflow:
+  experiment_name: 'Customer Complaints Classification'
+  version: 'v1'
+
+data:
+  data_path: 'data/complaints_processed.csv'
