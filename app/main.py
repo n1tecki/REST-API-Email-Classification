@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, Header
-from pydantic import BaseModel
-from objects import ModelLoader, Complaint
-from utils import load_config, get_hashed_key, verify_api_key
+from app.objects import ModelLoader, Complaint
+from app.utils import load_config, get_hashed_key, verify_api_key
 
 app = FastAPI()
 

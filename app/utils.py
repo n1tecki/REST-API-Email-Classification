@@ -1,7 +1,7 @@
 import yaml
 import hashlib
 
-def load_config(config_file='app/config.yaml'):
+def load_config(config_file='app\config.yaml'):
     """Load configuration from a YAML file."""
     with open(config_file, 'r') as file:
         return yaml.safe_load(file)
