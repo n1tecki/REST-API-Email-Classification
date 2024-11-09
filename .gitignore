@@ -1,6 +1,8 @@
 # Additional
-data/
-mlruns/
+data/*
+!data/.gitignore
+mlruns/*
+!mlruns/.gitignore
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
