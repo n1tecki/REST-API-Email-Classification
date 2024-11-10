@@ -7,81 +7,100 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import mlflow
 import mlflow.sklearn
 import yaml
-from preprocess import nan_removal
+from preprocess import DataPreprocessor
 
 
-# Load configuration from YAML file
-with open('scripts\config.yaml') as config_file:
-    config = yaml.safe_load(config_file)
+
+class Trainer:
+    def __init__(self, config_path):
+        self.config = self.load_config(config_path)
+        self.data = None
+        self.pipeline = None
+        self.preprocessor = DataPreprocessor()
 
 
-def train_model():
-
-    mlflow.set_experiment(config["mlflow"]["experiment_name"])
-    version = config["mlflow"]["version"]
-    with mlflow.start_run(run_name=f"Training Run {version}") as run:
-
-        # Load and preprocess data
-        data_raw = pd.read_csv(config["data"]["data_path"])
-        data = nan_removal(data_raw)
+    def load_config(self, path):
+        with open(path) as file:
+            return yaml.safe_load(file)
 
 
-        # Splitting data
-        X = data['narrative']
-        y = data['product']
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    def load_data(self):
+        data_raw = pd.read_csv(self.config["data"]["data_path"])
+        self.data = self.preprocessor.preprocess(data_raw)
+        return self.data
 
 
-        # Training the model with tokenizer and LR Pipeline using config parameters
-        pipeline = Pipeline([
+    def split_data(self):
+        X = self.data['narrative']
+        y = self.data['product']
+        return train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+    def build_pipeline(self):
+        self.pipeline = Pipeline([
             ('tfidf', TfidfVectorizer(
-                stop_words=config["vectorizer"]["stop_words"],
-                max_features=config["vectorizer"]["max_features"],
-                ngram_range=tuple(config["vectorizer"]["ngram_range"])
+                stop_words=self.config["vectorizer"]["stop_words"],
+                max_features=self.config["vectorizer"]["max_features"],
+                ngram_range=tuple(self.config["vectorizer"]["ngram_range"])
             )),
             ('clf', LogisticRegression(
-                max_iter=config["model"]["max_iter"], 
-                penalty=config["model"]["penalty"], 
-                random_state=config["model"]["random_state"],
-                C=config["model"]["C"], 
-                solver=config["model"]["solver"]
+                max_iter=self.config["model"]["max_iter"], 
+                penalty=self.config["model"]["penalty"], 
+                random_state=self.config["model"]["random_state"],
+                C=self.config["model"]["C"], 
+                solver=self.config["model"]["solver"]
             ))
         ])
-        pipeline.fit(X_train, y_train)
 
 
-        # Log parameters one by one
-        mlflow.log_param("model_max_iter", config["model"]["max_iter"])
-        mlflow.log_param("model_penalty", config["model"]["penalty"])
-        mlflow.log_param("model_random_state", config["model"]["random_state"])
-        mlflow.log_param("model_C", config["model"]["C"])
-        mlflow.log_param("model_solver", config["model"]["solver"])
-        mlflow.log_param("vectorizer_stop_words", config["vectorizer"]["stop_words"])
-        mlflow.log_param("vectorizer_max_features", config["vectorizer"]["max_features"])
-        mlflow.log_param("vectorizer_ngram_range", config["vectorizer"]["ngram_range"])
-        mlflow.log_param("mlflow_experiment_name", config["mlflow"]["experiment_name"])
-        mlflow.log_param("mlflow_version", config["mlflow"]["version"])
-        mlflow.log_param("data_path", config["data"]["data_path"])
+    def train(self, X_train, y_train):
+        self.pipeline.fit(X_train, y_train)
 
 
-        # Calculate and log metrics
-        y_pred = pipeline.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred, average='weighted', zero_division=1)
-        recall = recall_score(y_test, y_pred, average='weighted', zero_division=1)
-        f1 = f1_score(y_test, y_pred, average='weighted', zero_division=1)
-        mlflow.log_metric("accuracy", accuracy)
-        mlflow.log_metric("precision", precision)
-        mlflow.log_metric("recall", recall)
-        mlflow.log_metric("f1_score", f1)
+    def evaluate(self, X_test, y_test):
+        y_pred = self.pipeline.predict(X_test)
+        metrics = {
+            "accuracy": accuracy_score(y_test, y_pred),
+            "precision": precision_score(y_test, y_pred, average='weighted', zero_division=1),
+            "recall": recall_score(y_test, y_pred, average='weighted', zero_division=1),
+            "f1_score": f1_score(y_test, y_pred, average='weighted', zero_division=1)
+        }
+        return metrics
 
 
-        # Log the model
-        model_name = f"CustomerComplaintsModel_{version}"
-        mlflow.sklearn.log_model(pipeline, artifact_path="model", registered_model_name=model_name)
-        print(f"Model registered with run ID: {run.info.run_id}")
+    def log_metrics(self, metrics):
+        mlflow.log_metrics(metrics)
 
 
-train_model()
-#if __name__ == "__main__":
-#    train_model()
+    def log_parameters(self):
+        mlflow.log_param("model_max_iter", self.config["model"]["max_iter"])
+        mlflow.log_param("model_penalty", self.config["model"]["penalty"])
+        mlflow.log_param("model_random_state", self.config["model"]["random_state"])
+        mlflow.log_param("model_C", self.config["model"]["C"])
+        mlflow.log_param("model_solver", self.config["model"]["solver"])
+        mlflow.log_param("vectorizer_stop_words", self.config["vectorizer"]["stop_words"])
+        mlflow.log_param("vectorizer_max_features", self.config["vectorizer"]["max_features"])
+        mlflow.log_param("vectorizer_ngram_range", self.config["vectorizer"]["ngram_range"])
+        mlflow.log_param("mlflow_experiment_name", self.config["mlflow"]["experiment_name"])
+        mlflow.log_param("mlflow_version", self.config["mlflow"]["version"])
+        mlflow.log_param("data_path", self.config["data"]["data_path"])
+
+
+    def run(self):
+        mlflow.set_experiment(self.config["mlflow"]["experiment_name"])
+        version = self.config["mlflow"]["version"]
+        with mlflow.start_run(run_name=f"Training Run {version}") as run:
+            self.load_data()
+            X_train, X_test, y_train, y_test = self.split_data()
+            self.build_pipeline()
+            self.train(X_train, y_train)
+            metrics = self.evaluate(X_test, y_test)
+            self.log_metrics(metrics)
+            self.log_parameters()  # Log parameters
+            model_name = f"CustomerComplaintsModel_{version}"
+            mlflow.sklearn.log_model(self.pipeline, artifact_path="model", registered_model_name=model_name)
+            print(f"Model registered with run ID: {run.info.run_id}")
+
+
+trainer = Trainer('scripts/config.yaml')
+trainer.run()
