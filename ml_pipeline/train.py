@@ -8,7 +8,7 @@ import mlflow.sklearn
 from mlflow.tracking import MlflowClient
 import yaml
 from preprocess import DataPreprocessor
-from validation import Validator
+from validate import Validator
 
 
 
