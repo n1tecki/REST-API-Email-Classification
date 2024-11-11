@@ -14,8 +14,8 @@ app = FastAPI()
 config = load_config()
 SECRET_API_KEY = config["security"]["api_key"]
 hashed_key = get_hashed_key(SECRET_API_KEY)
-model_loader = ModelLoader(model_uri=config["model"]["model_path"])
-data_monitor = DataMonitor(config["data"]["data_path"])
+model_loader = ModelLoader(model_uri=f"models:/{config['model']['model_name']}/production")
+data_monitor = DataMonitor(config["data"]["data_path"], config["data"]["log_path"])
 
 
 
@@ -26,12 +26,7 @@ def predict_category(complaint: Complaint, api_key: str = Header(...)):
     
     try:
         prediction = model_loader.predict(complaint.text)
-
-        mlflow.log_param("model_version", model_loader.model_version)
-        mlflow.log_param("input_text_length", len(complaint.text))
-        mlflow.log_param("predicted_category", prediction)
         data_monitor.collect_data(complaint.text, prediction)
-        data_monitor.analyze_data_drift()
 
         return {"category": prediction}
     
@@ -39,18 +34,27 @@ def predict_category(complaint: Complaint, api_key: str = Header(...)):
         raise HTTPException(status_code=500, detail=str(e))
     
 
+
 @app.post("/model/manage")
-def manage_model(version: int, stage: str, api_key: str = Header(...)):
+def manage_model(version: int, api_key: str = Header(...)):
     if not verify_api_key(api_key, hashed_key):
         raise HTTPException(status_code=401, detail="Invalid API Key")
     try:
-        #client = MlflowClient()
-        #client.transition_model_version_stage(name="CustomerComplaintsModel", version=version, stage=stage)
-        
+        # Get the model URI for a specific version, without using stage
+        model_uri = f"models:/CustomerComplaintsModel/{version}"
+
         global model_loader
-        model_uri = f"models:/CustomerComplaintsModel/{version}@{stage}"
         model_loader = ModelLoader(model_uri=model_uri)
 
-        return {"message": f"Model version {version} transitioned to {stage} and reloaded for predictions"}
+        return {"message": f"Model version {version} reloaded for predictions"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+# mlflow ui
+# uvicorn app.main:app --reload
+# curl -X POST "http://127.0.0.1:8000/predict" -H "accept: application/json" -H "api-key: mysecretkey" -H "Content-Type: application/json" -d "{\"text\": \"I have an issue with my loan.\"}"
+# curl -X POST "http://127.0.0.1:8000/model/manage" -H "accept: application/json" -H "api_key: mysecretkey" -d '{"version": 2}'
+

@@ -72,14 +72,12 @@ class Trainer:
         mlflow.log_param("vectorizer_max_features", self.config["vectorizer"]["max_features"])
         mlflow.log_param("vectorizer_ngram_range", self.config["vectorizer"]["ngram_range"])
         mlflow.log_param("mlflow_experiment_name", self.config["mlflow"]["experiment_name"])
-        mlflow.log_param("mlflow_version", self.config["mlflow"]["version"])
         mlflow.log_param("data_path", self.config["data"]["data_path"])
 
 
     def run(self):
         mlflow.set_experiment(self.config["mlflow"]["experiment_name"])
-        version = self.config["mlflow"]["version"]
-        with mlflow.start_run(run_name=f"Training Run {version}") as run:
+        with mlflow.start_run(run_name=f"Training Run") as run:
             self.load_data()
             X_train, X_test, y_train, y_test = self.split_data()
             self.build_pipeline()
@@ -91,9 +89,14 @@ class Trainer:
             self.log_parameters()
 
             model_name = f"CustomerComplaintsModel"
-            mlflow.sklearn.log_model(self.pipeline, artifact_path="model", registered_model_name=model_name, version=version)
+            mlflow.sklearn.log_model(self.pipeline, artifact_path="model", registered_model_name=model_name)
+
             client = MlflowClient()
-            client.transition_model_version_stage(name=model_name, version=version, stage=self.config["mlflow"]["stage"])
+            mlflow.register_model(f"runs:/{run.info.run_id}/model", model_name)
+            latest_version = client.get_registered_model(model_name).latest_versions[0].version
+            client.transition_model_version_stage(
+                name=model_name, version=latest_version, stage=self.config["mlflow"]["stage"]
+            )
 
             print(f"Model registered with run ID: {run.info.run_id}")
 

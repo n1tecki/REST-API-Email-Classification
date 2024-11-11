@@ -1,8 +1,9 @@
 model:
-  model_path: "file://../mlruns/175873153352773210/c40867a27a574817ab6d98e0d06c6be2/artifacts/model/"
+  model_name: "CustomerComplaintsModel"
 
 security:
   api_key: "mysecretkey"
 
 data:
   data_path: 'data/complaints_processed.csv'
+  log_path: 'data/logged_data.csv'

@@ -15,7 +15,7 @@ class DataPreprocessor:
 
 
     def normalize_text(self, data, column):
-        data[column] = data[column].str.lower().str
+        data[column] = data[column].str.lower()
         return data
 
 
