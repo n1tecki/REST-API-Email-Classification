@@ -5,18 +5,18 @@ from evidently.dashboard import Dashboard
 from evidently.dashboard.tabs import DataDriftTab
 from app.objects import ModelLoader, Complaint
 from app.utils import load_config, get_hashed_key, verify_api_key
-from app.monitor import DataMonitor
+from app.monitoring import DataMonitor
 
 
 app = FastAPI()
 
 
-# Initialize model and preparing hash key
 config = load_config()
 SECRET_API_KEY = config["security"]["api_key"]
 hashed_key = get_hashed_key(SECRET_API_KEY)
 model_loader = ModelLoader(model_uri=config["model"]["model_path"])
-data_monitor = DataMonitor()
+data_monitor = DataMonitor(config["data"]["data_path"])
+
 
 
 @app.post("/predict")

@@ -3,3 +3,6 @@ model:
 
 security:
   api_key: "mysecretkey"
+
+data:
+  data_path: 'data/complaints_processed.csv'
