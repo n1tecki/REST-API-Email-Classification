@@ -1,11 +1,9 @@
 from fastapi import FastAPI, HTTPException, Header
-import mlflow
-from mlflow.tracking import MlflowClient
-from evidently.dashboard import Dashboard
-from evidently.dashboard.tabs import DataDriftTab
-from app.objects import ModelLoader, Complaint
-from app.utils import load_config, get_hashed_key, verify_api_key
-from app.monitoring import DataMonitor
+from fastapi import BackgroundTasks
+from api.models import ModelLoader, Complaint
+from api.utils import load_config, get_hashed_key, verify_api_key
+from api.monitoring import DataMonitor
+
 
 
 app = FastAPI()
@@ -20,13 +18,13 @@ data_monitor = DataMonitor(config["data"]["data_path"], config["data"]["log_path
 
 
 @app.post("/predict")
-def predict_category(complaint: Complaint, api_key: str = Header(...)):
+def predict_category(complaint: Complaint, background_tasks: BackgroundTasks, api_key: str = Header(...)):
     if not verify_api_key(api_key, hashed_key):
         raise HTTPException(status_code=401, detail="Invalid API Key")
     
     try:
         prediction = model_loader.predict(complaint.text)
-        data_monitor.collect_data(complaint.text, prediction)
+        background_tasks.add_task(data_monitor.collect_data(complaint.text, prediction))
 
         return {"category": prediction}
     

@@ -1,18 +1,17 @@
 import pandas as pd
 import mlflow
-from evidently import Dashboard
-from evidently.dashboard.tabs import DataDriftTab
-from evidently.model_profile import Profile
-from evidently.model_profile.sections import DataDriftProfileSection
-from app.util import process
+from evidently.report import Report
+from evidently.metric_preset import DataDriftPreset
+from api.utils import process
 import csv
+import os
 
 
 
 class DataMonitor:
     def __init__(self, training_data: str, output_csv: str):
         self.buffer = []
-        self.buffer_size = 10
+        self.buffer_size = 3
         self.request_count = 0
         self.training_data = training_data
         self.output_csv = output_csv
@@ -31,8 +30,11 @@ class DataMonitor:
 
 
     def flush_buffer(self):
-        with open(self.output_csv, mode='a', newline='') as file:
+        file_exists = os.path.isfile(self.output_csv)  # Check if file exists
+        with open(self.output_csv, mode='a', newline='') as file:  # Use 'a' for append mode
             writer = csv.writer(file)
+            if not file_exists:
+                writer.writerow(['narrative', 'product'])  # Write header if file didn't exist
             writer.writerows(self.buffer)
         self.buffer = []
 
@@ -41,12 +43,9 @@ class DataMonitor:
         df_current = process(self.output_csv)
         df_reference = process(self.training_data)
 
-        dashboard = Dashboard(tabs=[DataDriftTab()])
-        dashboard.calculate(df_reference, df_current)
+        report = Report(metrics=[DataDriftPreset()])
+        report.run(reference_data=df_reference, current_data=df_current)
 
         report_filename = "data_drift_report.html"
-        dashboard.save(report_filename)
+        report.save_html(report_filename)
         mlflow.log_artifact(report_filename)
-
-
-

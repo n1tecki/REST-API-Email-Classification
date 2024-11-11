@@ -101,5 +101,5 @@ class Trainer:
             print(f"Model registered with run ID: {run.info.run_id}")
 
 
-trainer = Trainer('scripts/config.yaml')
+trainer = Trainer('ml_pipeline/config.yaml')
 trainer.run()

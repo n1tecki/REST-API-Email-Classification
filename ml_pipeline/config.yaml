@@ -12,7 +12,7 @@ vectorizer:
 
 mlflow:
   experiment_name: 'Customer Complaints Classification'
-  stage: 'staging'
+  stage: 'production'
 
 data:
   data_path: 'data/complaints_processed.csv'

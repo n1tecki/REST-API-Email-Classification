@@ -1,8 +1,8 @@
 # Additional
 data/*
-!data/.gitignore
+!data/.gitkeep
 mlruns/*
-!mlruns/.gitignore
+!mlruns/.gitkeep
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
