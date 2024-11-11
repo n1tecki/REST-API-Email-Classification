@@ -3,11 +3,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 import mlflow
 import mlflow.sklearn
+from mlflow.tracking import MlflowClient
 import yaml
 from preprocess import DataPreprocessor
+from validation import Validator  # Import the Validator class
 
 
 
@@ -57,17 +58,6 @@ class Trainer:
         self.pipeline.fit(X_train, y_train)
 
 
-    def evaluate(self, X_test, y_test):
-        y_pred = self.pipeline.predict(X_test)
-        metrics = {
-            "accuracy": accuracy_score(y_test, y_pred),
-            "precision": precision_score(y_test, y_pred, average='weighted', zero_division=1),
-            "recall": recall_score(y_test, y_pred, average='weighted', zero_division=1),
-            "f1_score": f1_score(y_test, y_pred, average='weighted', zero_division=1)
-        }
-        return metrics
-
-
     def log_metrics(self, metrics):
         mlflow.log_metrics(metrics)
 
@@ -94,11 +84,17 @@ class Trainer:
             X_train, X_test, y_train, y_test = self.split_data()
             self.build_pipeline()
             self.train(X_train, y_train)
-            metrics = self.evaluate(X_test, y_test)
+
+            validator = Validator(self.pipeline)
+            metrics = validator.evaluate(X_test, y_test)
             self.log_metrics(metrics)
-            self.log_parameters()  # Log parameters
-            model_name = f"CustomerComplaintsModel_{version}"
-            mlflow.sklearn.log_model(self.pipeline, artifact_path="model", registered_model_name=model_name)
+            self.log_parameters()
+
+            model_name = f"CustomerComplaintsModel"
+            mlflow.sklearn.log_model(self.pipeline, artifact_path="model", registered_model_name=model_name, version=version)
+            client = MlflowClient()
+            client.transition_model_version_stage(name=model_name, version=version, stage=self.config["mlflow"]["stage"])
+
             print(f"Model registered with run ID: {run.info.run_id}")
 
 
