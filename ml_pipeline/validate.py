@@ -15,7 +15,6 @@ class Validator:
         }
 
         class_report = classification_report(y_test, y_pred)
-        print("Classification Report:\n", class_report)  # Optionally print it
         mlflow.log_text(class_report, "classification_report.txt")
 
         return metrics
