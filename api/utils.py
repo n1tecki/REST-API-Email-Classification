@@ -1,7 +1,6 @@
 import yaml
 import hashlib
 from ml_pipeline.preprocess import DataPreprocessor
-from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 
 
@@ -19,12 +18,24 @@ def verify_api_key(provided_key: str, hashed_key: str) -> bool:
     return provided_hash == hashed_key
 
 
-def process(path: str):
+def load_in(path: str):
     preprocessor = DataPreprocessor()
-    vectorizer = TfidfVectorizer()
-
     df = pd.read_csv(path)
+    print(f"Loaded DataFrame shape: {df.shape}")
     df = preprocessor.preprocess(df)
     df['input_length'] = df['narrative'].str.len()
-    df['tfidf_features'] = list(vectorizer.fit_transform(df['narrative']).toarray())
+    df['word_count'] = df['narrative'].apply(lambda x: len(str(x).split()))
+    df['char_count'] = df['narrative'].apply(lambda x: len(str(x)))
+    print(df)
     return df
+
+
+def vectorise(df, vectorizer):
+    vectors = vectorizer.transform(df['narrative']).toarray()
+    vector_df = pd.DataFrame(vectors, columns=vectorizer.get_feature_names_out())
+    vector_combined_df = pd.concat([
+        vector_df, 
+        df[['input_length', 'product']].reset_index(drop=True)
+    ], axis=1)
+
+    return vector_combined_df

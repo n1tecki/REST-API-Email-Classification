@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException, Header
-from fastapi import BackgroundTasks
 from api.models import ModelLoader, Complaint
 from api.utils import load_config, get_hashed_key, verify_api_key
 from api.monitoring import DataMonitor
@@ -13,18 +12,18 @@ config = load_config()
 SECRET_API_KEY = config["security"]["api_key"]
 hashed_key = get_hashed_key(SECRET_API_KEY)
 model_loader = ModelLoader(model_uri=f"models:/{config['model']['model_name']}/production")
-data_monitor = DataMonitor(config["data"]["data_path"], config["data"]["log_path"])
+data_monitor = DataMonitor()
 
 
 
 @app.post("/predict")
-def predict_category(complaint: Complaint, background_tasks: BackgroundTasks, api_key: str = Header(...)):
+def predict_category(complaint: Complaint, api_key: str = Header(...)):
     if not verify_api_key(api_key, hashed_key):
         raise HTTPException(status_code=401, detail="Invalid API Key")
     
     try:
         prediction = model_loader.predict(complaint.text)
-        background_tasks.add_task(data_monitor.collect_data(complaint.text, prediction))
+        data_monitor.collect_data(complaint.text, prediction)
 
         return {"category": prediction}
     
@@ -52,7 +51,7 @@ def manage_model(version: int, api_key: str = Header(...)):
 
 
 # mlflow ui
-# uvicorn app.main:app --reload
+# uvicorn api.app:app --reload
 # curl -X POST "http://127.0.0.1:8000/predict" -H "accept: application/json" -H "api-key: mysecretkey" -H "Content-Type: application/json" -d "{\"text\": \"I have an issue with my loan.\"}"
 # curl -X POST "http://127.0.0.1:8000/model/manage" -H "accept: application/json" -H "api_key: mysecretkey" -d '{"version": 2}'
 
