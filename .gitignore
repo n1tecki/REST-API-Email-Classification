@@ -1,8 +1,9 @@
 # Additional
 data/*
 !data/.gitkeep
-mlruns/*
-!mlruns/.gitkeep
+ml_pipeline/mlruns/*
+!ml_pipeline/mlruns/.gitkeep
+data_drift_report.html/
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
