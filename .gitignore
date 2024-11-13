@@ -2,7 +2,7 @@
 data/*
 !data/.gitkeep
 mlruns/*
-!ml_pipeline/mlruns/.gitkeep
+!mlruns/.gitkeep
 data_drift_report.html
 .DS_Store
 notes.txt
