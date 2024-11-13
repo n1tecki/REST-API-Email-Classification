@@ -5,10 +5,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from preprocess import DataPreprocessor
-from validate import Validator
-from utils.config_loader import load_config
-from utils.mlflow_logger import MLFlowLogger
+from ml_pipeline.utils.preprocess import DataPreprocessor
+from ml_pipeline.utils.validate import Validator
+from ml_pipeline.utils.config_loader import load_config
+from ml_pipeline.utils.mlflow_logger import MLFlowLogger
 
 
 
@@ -60,33 +60,20 @@ class Trainer:
 
     def run(self):
         mlflow.set_experiment(self.config["mlflow"]["experiment_name"])
-        with mlflow.start_run(run_name="Training Run") as run:
+        with mlflow.start_run(run_name=f"Training Run for {self.config['model']['model_name']}") as run:
             self.load_data()
             X_train, X_test, y_train, y_test = self.split_data()
             self.build_pipeline()
+            self.logger.log_parameters(self.pipeline)
             self.train(X_train, y_train)
-
             validator = Validator(self.pipeline)
             metrics = validator.evaluate(X_test, y_test)
-            
-            params = {
-                "model_max_iter": self.config["model"]["model_param"]["max_iter"],
-                "model_penalty": self.config["model"]["model_param"]["penalty"],
-                "model_random_state": self.config["model"]["model_param"]["random_state"],
-                "model_C": self.config["model"]["model_param"]["C"],
-                "model_solver": self.config["model"]["model_param"]["solver"],
-                "vectorizer_stop_words": self.config["vectorizer"]["stop_words"],
-                "vectorizer_max_features": self.config["vectorizer"]["max_features"],
-                "vectorizer_ngram_range": self.config["vectorizer"]["ngram_range"],
-                "mlflow_experiment_name": self.config["mlflow"]["experiment_name"],
-                "data_path": self.config["data"]["data_path"]
-            }
-            self.logger.log_parameters(params)
             self.logger.log_metrics(metrics)
-            self.logger.log_model_and_transition(self.pipeline, "model", self.config["model"]["model_name"], "Staging")
+            self.logger.log_model_and_transition(self.pipeline, "model", self.config["model"]["model_name"])
+            print(f"Model version {run.info.run_id} logged'.")
 
 
 
 if __name__ == "__main__":
-    trainer = Trainer('model_config.yaml')
+    trainer = Trainer('ml_pipeline\model_config.yaml')
     trainer.run()

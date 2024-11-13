@@ -1,10 +1,11 @@
 # Additional
 data/*
 !data/.gitkeep
-ml_pipeline/mlruns/*
+mlruns/*
 !ml_pipeline/mlruns/.gitkeep
-data_drift_report.html/
+data_drift_report.html
 .DS_Store
+notes.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

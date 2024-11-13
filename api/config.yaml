@@ -1,8 +1,8 @@
 model:
-  model_name: "CustomerComplaintsModel"
+  model_name: "LogisticRegressionModel"
 
 security:
-  api_key: "mysecretkey"
+  hashed_token: "2afe16a6d630d94cd07c68d5e35568655bf5f60bef29c4f1321fc857816afec9"
 
 data:
   data_path: 'data/complaints_processed.csv'

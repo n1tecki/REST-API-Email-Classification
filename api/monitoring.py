@@ -6,7 +6,7 @@ from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset
 from evidently import ColumnMapping
 from sklearn.feature_extraction.text import CountVectorizer
-from api.utils import load_in, vectorise, load_config
+from api.utils.general_utils import load_in, vectorise, load_config
 
 
 class DataMonitor:

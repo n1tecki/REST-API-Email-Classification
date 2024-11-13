@@ -1,5 +1,5 @@
 model:
-  model_name: "CustomerComplaintsModel"
+  model_name: "LogisticRegressionModel"
   model_param:
     max_iter: 10000
     penalty: 'l2'
@@ -17,4 +17,4 @@ mlflow:
   stage: 'production'
 
 data:
-  data_path: '../data/complaints_processed.csv'
+  data_path: 'data/complaints_processed.csv'

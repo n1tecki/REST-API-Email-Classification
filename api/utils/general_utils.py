@@ -1,7 +1,7 @@
 import yaml
 import hashlib
 import pandas as pd
-from ml_pipeline.preprocess import DataPreprocessor
+from api.utils.preprocess import DataPreprocessor
 
 
 
@@ -12,6 +12,7 @@ def load_config(config_file='api/config.yaml'):
 
 
 def get_hashed_key(secret_key: str) -> str:
+    print(hashlib.sha256(secret_key.encode()).hexdigest())
     return hashlib.sha256(secret_key.encode()).hexdigest()
 
 
